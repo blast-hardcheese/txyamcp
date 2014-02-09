@@ -1,10 +1,12 @@
 import itertools
 
+from twisted.internet.defer import DeferredList
 from twisted.internet.defer import DeferredQueue
 
 from zope.interface import implements
 
 from txyamcp.interfaces import IYamClientPool
+from txyamcp.client import PooledYamClient
 
 
 class YamClientPool(object):
@@ -35,8 +37,9 @@ class YamClientPool(object):
         self.nextHost = lambda: self.hostIter.next()
 
         # Build initial pool synchronously
-        self.pool = [self.nextHost() for i in xrange(poolSize)]
         self.queue = DeferredQueue()
+        buildClient = lambda: PooledYamClient([ self.nextHost() ], self.queue)
+        self.pool = [buildClient() for i in xrange(poolSize)]
 
         self.setPoolSize(poolSize)
 
@@ -45,14 +48,16 @@ class YamClientPool(object):
         Get a deferred that fires only when all connections have been
         established.
         """
-        pass
+
+        return DeferredList([client.connect() for client in self.pool])
 
     def disconnect(self):
         """
         Get a deferred that fires only when all connections have been
         terminated.
         """
-        pass
+
+        return DeferredList([client.poolDisconnect() for client in self.pool])
 
     def getConnection(self):
         """
