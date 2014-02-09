@@ -15,6 +15,9 @@ class YamClientPool(object):
     implements(IYamClientPool)
 
     desiredPoolSize = 0
+    @property
+    def size(self):
+        return len(self.pool)
 
     autoincBy = 5
     autoincTimeout = 2  # seconds
