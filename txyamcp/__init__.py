@@ -1,3 +1,7 @@
+import itertools
+
+from twisted.internet.defer import DeferredQueue
+
 from zope.interface import implements
 
 from txyamcp.interfaces import IYamClientPool
@@ -5,6 +9,14 @@ from txyamcp.interfaces import IYamClientPool
 
 class YamClientPool(object):
     implements(IYamClientPool)
+
+    desiredPoolSize = 0
+
+    hostIter = None
+    nextHost = lambda: None
+
+    pool = None
+    queue = None
 
     def __init__(self, hosts, poolSize=10):
         """
@@ -18,7 +30,15 @@ class YamClientPool(object):
         @param poolSize: Initial size of the connection pool.
         @type poolSize: C{int}
         """
-        pass
+
+        self.hostIter = itertools.cycle(hosts)
+        self.nextHost = lambda: self.hostIter.next()
+
+        # Build initial pool synchronously
+        self.pool = [self.nextHost() for i in xrange(poolSize)]
+        self.queue = DeferredQueue()
+
+        self.setPoolSize(poolSize)
 
     def connect(self):
         """
@@ -47,4 +67,5 @@ class YamClientPool(object):
         @param desiredSize: Integer defining the desired size of the pool.
         @type desiredSize: C{int}
         """
-        pass
+
+        self.desiredPoolSize = desiredSize
