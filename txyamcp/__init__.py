@@ -125,4 +125,7 @@ class YamClientPool(object):
         @type desiredSize: C{int}
         """
 
+        delta = desiredSize - self.size
         self.desiredPoolSize = desiredSize
+        if delta > 0:
+            self.addConnections(delta)
