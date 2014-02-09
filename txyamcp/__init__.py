@@ -1,5 +1,6 @@
 import itertools
 
+from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.defer import DeferredQueue
 
@@ -66,6 +67,19 @@ class YamClientPool(object):
         """
 
         return DeferredList([client.poolDisconnect() for client in self.pool])
+
+    def addConnections(self, count):
+        """
+        Add new connections to the pool.
+
+        @param count: Number of new connections to add
+        @type count: C{int}
+        """
+
+        if count > 0:
+            client = self.buildClient()
+            self.pool.append(client)
+            reactor.callLater(0, self.addConnections, count - 1)
 
     def getConnection(self):
         """
