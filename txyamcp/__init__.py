@@ -38,10 +38,18 @@ class YamClientPool(object):
 
         # Build initial pool synchronously
         self.queue = DeferredQueue()
-        buildClient = lambda: PooledYamClient([ self.nextHost() ], self.queue)
-        self.pool = [buildClient() for i in xrange(poolSize)]
+        self.pool = [self.buildClient() for i in xrange(poolSize)]
 
         self.setPoolSize(poolSize)
+
+    def buildClient(self, autoQueue=True):
+        client = PooledYamClient([ self.nextHost() ], self.queue)
+        if autoQueue:
+            def queue(client):
+                self.queue.put(client)
+                return client
+            client.connect().addCallback(queue)
+        return client
 
     def connect(self):
         """
