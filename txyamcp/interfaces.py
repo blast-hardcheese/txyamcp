@@ -1,12 +1,10 @@
-from zope.interface import implements
-
-from txyamcp.interfaces import IYamClientPool
+from zope.interface import Interface
 
 
-class YamClientPool(object):
-    implements(IYamClientPool)
+class IYamClientPool(Interface):
+    """Interface for YamClientPool"""
 
-    def __init__(self, hosts, poolSize=10):
+    def __init__(hosts, poolSize=10):
         """
         Initialize YamClientPool
 
@@ -18,33 +16,28 @@ class YamClientPool(object):
         @param poolSize: Initial size of the connection pool.
         @type poolSize: C{int}
         """
-        pass
 
-    def connect(self):
+    def connect():
         """
         Get a deferred that fires only when all connections have been
         established.
         """
-        pass
 
-    def disconnect(self):
+    def disconnect():
         """
         Get a deferred that fires only when all connections have been
         terminated.
         """
-        pass
 
-    def getConnection(self):
+    def getConnection():
         """
         Get an available PooledYamClient.
         """
-        pass
 
-    def setPoolSize(self, desiredSize):
+    def setPoolSize(desiredSize):
         """
         Set the desired connection pool size
 
         @param desiredSize: Integer defining the desired size of the pool.
         @type desiredSize: C{int}
         """
-        pass
