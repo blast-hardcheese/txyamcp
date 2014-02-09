@@ -9,10 +9,13 @@ from zope.interface import implements
 
 from txyamcp.interfaces import IYamClientPool
 from txyamcp.client import PooledYamClient
+from txyamcp.exceptions import PoolDisconnectException
 
 
 class YamClientPool(object):
     implements(IYamClientPool)
+
+    connectable = False
 
     desiredPoolSize = 0
     @property
@@ -47,6 +50,7 @@ class YamClientPool(object):
         # Build initial pool synchronously
         self.queue = DeferredQueue()
         self.pool = [self.buildClient() for i in xrange(poolSize)]
+        self.connectable = True
 
         self.setPoolSize(poolSize)
 
@@ -64,6 +68,7 @@ class YamClientPool(object):
         Get a deferred that fires only when all connections have been
         established.
         """
+        self.connectable = True
 
         return DeferredList([client.connect() for client in self.pool])
 
@@ -72,6 +77,7 @@ class YamClientPool(object):
         Get a deferred that fires only when all connections have been
         terminated.
         """
+        self.connectable = False
 
         return DeferredList([client.poolDisconnect() for client in self.pool])
 
@@ -92,6 +98,9 @@ class YamClientPool(object):
         """
         Get an available PooledYamClient.
         """
+        if not self.connectable:
+            raise PoolDisconnectException, "Someone has already called pool.disconnect()"
+
         d = self.queue.get()
 
         def timeout():

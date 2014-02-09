@@ -1,0 +1,2 @@
+class PoolDisconnectException(Exception):
+    pass
