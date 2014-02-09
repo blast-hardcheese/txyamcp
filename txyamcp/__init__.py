@@ -3,6 +3,7 @@ import itertools
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.defer import DeferredQueue
+from twisted.internet.error import AlreadyCalled
 
 from zope.interface import implements
 
@@ -14,6 +15,9 @@ class YamClientPool(object):
     implements(IYamClientPool)
 
     desiredPoolSize = 0
+
+    autoincBy = 5
+    autoincTimeout = 2  # seconds
 
     hostIter = None
     nextHost = lambda: None
@@ -85,7 +89,21 @@ class YamClientPool(object):
         """
         Get an available PooledYamClient.
         """
-        pass
+        d = self.queue.get()
+
+        def timeout():
+            self.addConnections(self.autoincBy)
+        t = reactor.callLater(self.autoincTimeout, timeout)
+
+        def cancelTimeout(res, t):
+            try:
+                t.cancel()
+            except AlreadyCalled:
+                pass
+            return res
+        d.addCallback(cancelTimeout, t)
+
+        return d
 
     def setPoolSize(self, desiredSize):
         """
