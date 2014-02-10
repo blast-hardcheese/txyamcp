@@ -12,8 +12,8 @@ class YamClientPoolAutoincTestCase(unittest.TestCase):
         hosts = [
             'localhost',
         ]
-
-        pool = YamClientPool(hosts, poolSize=0)
+        # Low prune rate will clear out all clients before this test finishes
+        pool = YamClientPool(hosts, poolSize=0, pruneTimeout=0.1)
 
         client = yield pool.getConnection()
 
@@ -25,12 +25,12 @@ class YamClientPoolAutoincTestCase(unittest.TestCase):
         assert pool.size == pool.autoincBy,\
             "Pool size should be exactly pool.autoincBy!"
 
+        yield client.disconnect()
+
         yield sleep(1)  # FIXME: This is needed due to a race condition in
                         # YamClient's connect(). YamClient.connect() needs
                         # to return a single Deferred that completes when
                         # all connections are fully set up.
-
-        yield pool.disconnect()
 
     @inlineCallbacks
     def test_cancel(self):
