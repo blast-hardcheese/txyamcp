@@ -1,33 +1,32 @@
-from twisted.internet import reactor
+from twisted.internet import reactor, task
+from twisted.internet.defer import inlineCallbacks
+from twisted.trial import unittest
 
 from txyamcp import YamClientPool
+from txyamcp.tests.utils import sleep
 
 
-def test():
-    hosts = [
-        'localhost',
-    ]
+class YamClientPoolAutoincTestCase(unittest.TestCase):
+    @inlineCallbacks
+    def test_autoinc(self):
+        hosts = [
+            'localhost',
+        ]
 
-    pool = YamClientPool(hosts, poolSize=0)
+        pool = YamClientPool(hosts, poolSize=0)
 
-    def gotClient(client):
-        print "Current pool size:", pool.size
-        reactor.callLater(0, rec, 5)
+        client = yield pool.getConnection()
 
-    def rec(count):
-        if count > 0 and pool.size < pool.autoincBy:
-            print "Autoincrementing pool size...", pool.size
-            reactor.callLater(0, rec, count - 1)
-        else:
-            print "Pool size:", pool.size
-            reactor.stop()
+        def rec(count):
+            if count > 0 and pool.size < pool.autoincBy:
+                return task.deferLater(reactor, 0, rec, count - 1)
+        yield rec(5)
 
-    print "Pool size:", pool.size
-    print "Get connection..."
-    pool.getConnection().addCallback(gotClient)
+        assert pool.size == pool.autoincBy, "Pool size should be exactly pool.autoincBy!"
 
-    reactor.run()
+        yield sleep(1)  # FIXME: This is needed due to a race condition in
+                        # YamClient's connect(). YamClient.connect() needs
+                        # to return a single Deferred that completes when
+                        # all connections are fully set up.
 
-
-if __name__ == "__main__":
-    test()
+        yield pool.disconnect()

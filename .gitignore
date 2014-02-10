@@ -1,2 +1,5 @@
 *.pyc
 .*.sw*
+_trial_temp/
+_trial_temp.lock
+*.egg-info/

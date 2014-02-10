@@ -1,28 +1,35 @@
-from twisted.internet import reactor
+from twisted.internet import defer, reactor
+from twisted.internet.defer import DeferredQueue
+from twisted.trial import unittest
+from twisted.internet.defer import inlineCallbacks
 
 from txyamcp import YamClientPool
+from txyamcp.client import PooledYamClient
+from txyamcp.tests.utils import sleep
 
 
-def test():
-    hosts = [
-        'localhost',
-    ]
+class YamClientPoolConnectionTestSuite(unittest.TestCase):
+    @inlineCallbacks
+    def test_raw_connection(self):
+        queue = DeferredQueue()
+        client = PooledYamClient(['localhost'], queue)
 
-    pool = YamClientPool(hosts)
+        res = yield client.connect()
+        yield client.poolDisconnect()
 
-    def connected(res):
-        print "Connected!"
-        def disconnected(res):
-            print "Disconnected!"
-            def connectedAgain(res):
-                print "Connected again somehow!"
-                reactor.stop()
-            pool.connect().addCallback(connectedAgain)
-        pool.disconnect().addCallback(disconnected)
-    pool.connect().addCallback(connected)
+    @inlineCallbacks
+    def test_pooled_reconnection(self):
+        hosts = [
+            'localhost',
+        ]
 
-    reactor.run()
+        pool = YamClientPool(hosts, poolSize=1)
 
-
-if __name__ == "__main__":
-    test()
+        client1 = yield pool.getConnection()
+        res = yield client1.disconnect()
+        client2 = yield pool.getConnection()
+        yield sleep(1)  # FIXME: This is needed due to a race condition in
+                        # YamClient's connect(). YamClient.connect() needs
+                        # to return a single Deferred that completes when
+                        # all connections are fully set up.
+        yield pool.disconnect()

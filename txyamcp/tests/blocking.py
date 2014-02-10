@@ -1,40 +1,39 @@
-from twisted.internet import reactor
+from twisted.internet import reactor, task
+from twisted.internet.defer import inlineCallbacks
+from twisted.trial import unittest
 
 from txyamcp import YamClientPool
 
 
-def test():
-    hosts = [
-        'localhost',
-    ]
+class YamClientPoolBlockingTestCase(unittest.TestCase):
 
-    pool = YamClientPool(hosts, 1)
+    @inlineCallbacks
+    def test_blocking(self):
+        hosts = [
+            'localhost',
+        ]
 
-    def connected(res):
-        def gotConnection(client):
-            outerClient = client
-            def blockedConnection(client):
-                innerClient = client
+        pool = YamClientPool(hosts, 1)
 
-                assert outerClient == innerClient, "Received clients are different!"
+        res = yield pool.connect()
+        outerClient = yield pool.getConnection()
 
-                def waitForTimeout():
-                    assert pool.size == 1, "More clients were allocated!"
-                    print "Clients were the same, no additional clients were created"
-                    reactor.stop()
-                reactor.callLater(pool.autoincTimeout, waitForTimeout)
-            pool.getConnection().addCallback(blockedConnection)
+        def blockedConnection(client):
+            innerClient = client
 
-            def releaseClient():
-                client.disconnect()
-            reactor.callLater(1, releaseClient)
-        pool.getConnection().addCallback(gotConnection)
+            assert outerClient == innerClient, "Received clients are different!"
 
-    pool.connect().addCallback(connected)
+            def waitForTimeout():
+                assert pool.size == 1, "More clients were allocated!"
+                # "Clients were the same, no additional clients were created"
 
-    reactor.run()
+            return task.deferLater(reactor, pool.autoincTimeout, waitForTimeout)
+        d = pool.getConnection().addCallback(blockedConnection)
 
+        def releaseClient():
+            outerClient.disconnect()
+        yield task.deferLater(reactor, 1, releaseClient)
 
-if __name__ == "__main__":
-    test()
+        yield d
 
+        yield pool.disconnect()
