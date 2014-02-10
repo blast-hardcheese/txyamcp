@@ -33,7 +33,11 @@ class YamClientPool(object):
     pool = None
     queue = None
 
-    def __init__(self, hosts, poolSize=10):
+    pruneTimeout = 1
+
+    def __init__(self, hosts, poolSize=10,
+                 pruneTimeout=1,
+                 ):
         """
         Initialize YamClientPool
 
@@ -44,7 +48,13 @@ class YamClientPool(object):
 
         @param poolSize: Initial size of the connection pool.
         @type poolSize: C{int}
+
+        @param pruneTimeout: Time, in seconds, to wait between removing excess
+                             clients from the pool
+        @type pruneTimeout: C{int}
         """
+
+        self.pruneTimeout = pruneTimeout
 
         self.hostIter = itertools.cycle(hosts)
         self.nextHost = lambda: self.hostIter.next()
@@ -112,6 +122,7 @@ class YamClientPool(object):
 
         def timeout():
             self.addConnections(self.autoincBy)
+            reactor.callLater(self.pruneTimeout, self.pruneConnections)
         t = reactor.callLater(self.autoincTimeout, timeout)
 
         def cancelTimeout(res, t):
@@ -127,11 +138,31 @@ class YamClientPool(object):
             except AlreadyCalled:
                 pass
             failure.trap(CancelledError)
-
         d.addCallback(cancelTimeout, t)
         d.addErrback(cancelErrback, t)
 
         return d
+
+    def pruneConnections(self):
+        if self.size > self.desiredPoolSize:
+            d = self.getConnection()
+
+            def timeout():
+                d.cancel()
+            t = reactor.callLater(self.pruneTimeout, timeout)
+
+            def prune(client):
+                try:
+                    t.cancel()
+                except AlreadyCalled:
+                    pass
+                if client is not None:
+                    client.poolDisconnect()
+                    self.pool.remove(client)
+
+            d.addCallback(prune)
+
+            reactor.callLater(self.pruneTimeout, self.pruneConnections)
 
     def setPoolSize(self, desiredSize):
         """

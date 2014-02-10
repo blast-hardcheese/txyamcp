@@ -44,3 +44,16 @@ class YamClientPoolAutoincTestCase(unittest.TestCase):
         d.cancel()
         yield d
         assert pool.size == 0, "Don't allocate unnecessary connections!"
+
+    @inlineCallbacks
+    def test_autodec(self):
+        hosts = [
+            'localhost',
+        ]
+
+        pool = YamClientPool(hosts, poolSize=0, pruneTimeout=0.05)
+        client = yield pool.getConnection()
+        yield sleep(0.1 * pool.autoincBy + 0.1)
+        client.disconnect()
+        yield sleep(0.5)
+        assert pool.size == 0, "Always autodec to desiredSize"
