@@ -1,3 +1,4 @@
+from twisted.internet import defer, reactor
 from twisted.internet.defer import DeferredQueue
 from twisted.trial import unittest
 from twisted.internet.defer import inlineCallbacks
@@ -9,6 +10,11 @@ from txyamcp import YamClientPool
 import os
 os.system('clear')
 os.system('date')
+
+def sleep(seconds):
+    d = defer.Deferred()
+    reactor.callLater(seconds, d.callback, seconds)
+    return d
 
 class YamClientPoolConnectionTestSuite(unittest.TestCase):
     @inlineCallbacks
@@ -30,4 +36,8 @@ class YamClientPoolConnectionTestSuite(unittest.TestCase):
         client1 = yield pool.getConnection()
         res = yield client1.disconnect()
         client2 = yield pool.getConnection()
+        yield sleep(1)  # FIXME: This is needed due to a race condition in
+                        # YamClient's connect(). YamClient.connect() needs
+                        # to return a single Deferred that completes when
+                        # all connections are fully set up.
         yield pool.disconnect()
