@@ -3,18 +3,10 @@ from twisted.internet.defer import DeferredQueue
 from twisted.trial import unittest
 from twisted.internet.defer import inlineCallbacks
 
-from txyamcp.client import PooledYamClient
 from txyamcp import YamClientPool
+from txyamcp.client import PooledYamClient
+from txyamcp.tests.utils import sleep
 
-
-import os
-os.system('clear')
-os.system('date')
-
-def sleep(seconds):
-    d = defer.Deferred()
-    reactor.callLater(seconds, d.callback, seconds)
-    return d
 
 class YamClientPoolConnectionTestSuite(unittest.TestCase):
     @inlineCallbacks
