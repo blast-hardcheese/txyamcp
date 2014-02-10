@@ -1,3 +1,4 @@
+from twisted.internet.defer import Deferred
 from txyam.client import YamClient
 
 
@@ -18,6 +19,9 @@ class PooledYamClient(YamClient):
                        the pool.
         """
         self.queue.put(self)
+        d = Deferred()
+        d.callback(None)
+        return d
 
     def poolDisconnect(self):
         """poolDisconnect: Actually disconnect this client. This should only be
