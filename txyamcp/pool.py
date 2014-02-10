@@ -68,6 +68,9 @@ class YamClientPool(object):
         """
         Get a deferred that fires only when all connections have been
         established.
+
+        FIXME: This will leak connections due to a bug in YamClient.connect!
+               Do not use YamClientPool.connect() until this bug is fixed!
         """
         self.connectable = True
 
