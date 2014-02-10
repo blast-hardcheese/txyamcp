@@ -37,6 +37,7 @@ class YamClientPool(object):
 
     def __init__(self, hosts, poolSize=10,
                  pruneTimeout=1,
+                 autoincBy=5, autoincTimeout=2,
                  ):
         """
         Initialize YamClientPool
@@ -52,9 +53,19 @@ class YamClientPool(object):
         @param pruneTimeout: Time, in seconds, to wait between removing excess
                              clients from the pool
         @type pruneTimeout: C{int}
+
+        @param autoincBy: Number of connections to auto-increment by
+        @type autoincBy: C{int}
+
+        @param autoincTimeout: Seconds waiting until new connections are
+                               allocated
+        @type autoincTimeout: C{int}
         """
 
         self.pruneTimeout = pruneTimeout
+
+        self.autoincBy = autoincBy
+        self.autoincTimeout = autoincTimeout
 
         self.hostIter = itertools.cycle(hosts)
         self.nextHost = lambda: self.hostIter.next()
