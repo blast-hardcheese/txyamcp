@@ -1,6 +1,6 @@
 from zope.interface.verify import verifyClass
 
-from txyamcp import YamClientPool
+from txyamcp.pool import YamClientPool
 from txyamcp.interfaces import IYamClientPool
 
 

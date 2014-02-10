@@ -2,7 +2,7 @@ from twisted.internet import reactor, task
 from twisted.internet.defer import inlineCallbacks
 from twisted.trial import unittest
 
-from txyamcp import YamClientPool
+from txyamcp.pool import YamClientPool
 
 
 class YamClientPoolBlockingTestCase(unittest.TestCase):

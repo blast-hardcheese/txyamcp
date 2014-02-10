@@ -3,7 +3,7 @@ from twisted.internet.defer import DeferredQueue
 from twisted.trial import unittest
 from twisted.internet.defer import inlineCallbacks
 
-from txyamcp import YamClientPool
+from txyamcp.pool import YamClientPool
 from txyamcp.client import PooledYamClient
 from txyamcp.tests.utils import sleep
 

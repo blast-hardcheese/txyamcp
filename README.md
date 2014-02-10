@@ -6,6 +6,8 @@ A connection-pooling extension to txyam.
 Usage
 =====
 
+    from txyamcp.pool import YamClientPool
+
     hosts = [ 'localhost', ('otherhost', 123) ]
     pool = YamClientPool(hosts, poolSize=100)
 
