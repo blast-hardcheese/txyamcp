@@ -3,6 +3,7 @@ import itertools
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.defer import DeferredQueue
+from twisted.internet.defer import CancelledError
 from twisted.internet.error import AlreadyCalled
 
 from zope.interface import implements
@@ -119,7 +120,16 @@ class YamClientPool(object):
             except AlreadyCalled:
                 pass
             return res
+
+        def cancelErrback(failure, t):
+            try:
+                t.cancel()
+            except AlreadyCalled:
+                pass
+            failure.trap(CancelledError)
+
         d.addCallback(cancelTimeout, t)
+        d.addErrback(cancelErrback, t)
 
         return d
 

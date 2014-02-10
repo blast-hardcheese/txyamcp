@@ -3,7 +3,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.trial import unittest
 
 from txyamcp.pool import YamClientPool
-from txyamcp.tests.utils import sleep
+from txyamcp.tests.utils import sleep, tick
 
 
 class YamClientPoolAutoincTestCase(unittest.TestCase):
@@ -31,3 +31,16 @@ class YamClientPoolAutoincTestCase(unittest.TestCase):
                         # all connections are fully set up.
 
         yield pool.disconnect()
+
+    @inlineCallbacks
+    def test_cancel(self):
+        hosts = [
+            'localhost',
+        ]
+
+        pool = YamClientPool(hosts, poolSize=0)
+        d = pool.getConnection()
+        yield tick()
+        d.cancel()
+        yield d
+        assert pool.size == 0, "Don't allocate unnecessary connections!"
