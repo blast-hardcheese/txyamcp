@@ -21,13 +21,18 @@ class YamClientPoolBlockingTestCase(unittest.TestCase):
         def blockedConnection(client):
             innerClient = client
 
-            assert outerClient == innerClient, "Received clients are different!"
+            assert outerClient == innerClient,\
+                "Received clients are different!"
 
             def waitForTimeout():
                 assert pool.size == 1, "More clients were allocated!"
                 # "Clients were the same, no additional clients were created"
 
-            return task.deferLater(reactor, pool.autoincTimeout, waitForTimeout)
+            return task.deferLater(
+                reactor,
+                pool.autoincTimeout,
+                waitForTimeout
+            )
         d = pool.getConnection().addCallback(blockedConnection)
 
         def releaseClient():

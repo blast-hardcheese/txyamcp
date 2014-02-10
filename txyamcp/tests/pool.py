@@ -21,7 +21,8 @@ def test():
     def connected(client):
         print "Client connected:", client
         print "\tConnected hosts:", client.hosts
-        assert len(client.hosts) == 1, "Wrong number of hosts for pooled client!"
+        assert len(client.hosts) == 1,\
+            "Wrong number of hosts for pooled client!"
         host = client.hosts[0]
         assert host in left, "Host not in remaining hosts!"
 

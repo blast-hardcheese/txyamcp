@@ -22,7 +22,8 @@ class YamClientPoolAutoincTestCase(unittest.TestCase):
                 return task.deferLater(reactor, 0, rec, count - 1)
         yield rec(5)
 
-        assert pool.size == pool.autoincBy, "Pool size should be exactly pool.autoincBy!"
+        assert pool.size == pool.autoincBy,\
+            "Pool size should be exactly pool.autoincBy!"
 
         yield sleep(1)  # FIXME: This is needed due to a race condition in
                         # YamClient's connect(). YamClient.connect() needs

@@ -18,6 +18,7 @@ class YamClientPool(object):
     connectable = False
 
     desiredPoolSize = 0
+
     @property
     def size(self):
         return len(self.pool)
@@ -55,7 +56,7 @@ class YamClientPool(object):
         self.setPoolSize(poolSize)
 
     def buildClient(self, autoQueue=True):
-        client = PooledYamClient([ self.nextHost() ], self.queue)
+        client = PooledYamClient([self.nextHost()], self.queue)
         if autoQueue:
             def queue(client):
                 self.queue.put(client)
@@ -99,7 +100,9 @@ class YamClientPool(object):
         Get an available PooledYamClient.
         """
         if not self.connectable:
-            raise PoolDisconnectException, "Someone has already called pool.disconnect()"
+            raise PoolDisconnectException(
+                "Someone has already called pool.disconnect()"
+            )
 
         d = self.queue.get()
 
