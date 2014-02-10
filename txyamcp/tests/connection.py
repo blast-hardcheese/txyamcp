@@ -1,28 +1,36 @@
-from twisted.internet import reactor
+from twisted.internet.defer import DeferredQueue
+from twisted.trial import unittest
 
+from txyamcp.client import PooledYamClient
 from txyamcp import YamClientPool
 
 
-def test():
-    hosts = [
-        'localhost',
-    ]
+import os
+os.system('clear')
+os.system('date')
 
-    pool = YamClientPool(hosts)
+class YamClientPoolConnectionTestSuite(unittest.TestCase):
+    def test_raw_connection(self):
+        queue = DeferredQueue()
+        client = PooledYamClient(['localhost'], queue)
+        def disconnect(res):
+            return client.poolDisconnect()
+        return client.connect().addCallback(disconnect)
 
-    def connected(res):
-        print "Connected!"
-        def disconnected(res):
-            print "Disconnected!"
-            def connectedAgain(res):
-                print "Connected again somehow!"
-                reactor.stop()
-            pool.connect().addCallback(connectedAgain)
-        pool.disconnect().addCallback(disconnected)
-    pool.connect().addCallback(connected)
+    def test_pooled_reconnection(self):
+        hosts = [
+            'localhost',
+        ]
 
-    reactor.run()
+        pool = YamClientPool(hosts, poolSize=1)
 
-
-if __name__ == "__main__":
-    test()
+        def connected(client):
+            print "Connected!"
+            def disconnected(res):
+                print "Disconnected!"
+                def connectedAgain(res):
+                    print "Connected again somehow!"
+                    return pool.disconnect()
+                return pool.getConnection().addCallback(connectedAgain)
+            return client.disconnect().addCallback(disconnected)
+        return pool.getConnection().addCallback(connected)
