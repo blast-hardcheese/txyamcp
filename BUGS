@@ -1,0 +1,15 @@
+YamClient leaks connections when .connect() is called multiple times.
+    Expected behaviour would be to have one Deferred per .connect()/.disconnect() cycle, optionally reset if the connection is lost for other reasons.
+    Rationale:
+
+        def buildClient():
+            client.connect().addCallback(...)
+
+            return client
+
+        ...
+
+        buildClient().connect().addCallback(...)
+
+    The library is architected around having a single reference to client (thinking of memoize)
+    Additionally, YamClient's constructor passes "connected=True" automatically, so any further connect() calls are entirely in error and leak connections immediately.

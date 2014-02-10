@@ -12,6 +12,7 @@ class PooledYamClient(YamClient):
         @param queue: Anything that conforms to DeferredQueue's interface.
         """
         self.queue = queue
+        self.connectingDeferred = None
         YamClient.__init__(self, hosts, *args, **kwargs)
 
     def disconnect(self):
@@ -28,3 +29,10 @@ class PooledYamClient(YamClient):
            called by the controlling pool.
         """
         return YamClient.disconnect(self)
+
+    def connect(self):
+        if self.connectingDeferred is None:
+            self.connectingDeferred = YamClient.connect(self)
+        return self.connectingDeferred  # XXX: What happens when the factory
+                                        # connection is lost for other reasons
+                                        # than .disconnect()?
